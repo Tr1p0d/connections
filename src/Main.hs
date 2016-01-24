@@ -4,18 +4,19 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-------------------------------------------------------------------
+--------------------------------------------------------------------
 -- |
 -- Module      :  Main
 -- Copyright   :  (C) Marek Kidon 2016
 -- License     :  BSD-style (see the file LICENSE)
--- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz
+-- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz>
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
 -- This module contains an example application created
 -- using the connections library.
 --------------------------------------------------------------------
+module Main where
 
 import Control.Applicative (Applicative)
 import Control.Monad ((>>=), Monad, return)
@@ -62,7 +63,7 @@ newtype TCPConnectionT m a =
     )
 
 main :: IO ()
-main = eval client >>= either print (return . id)
+main = eval client >>= either print return
   where
     eval = runExceptT . runTCP
 

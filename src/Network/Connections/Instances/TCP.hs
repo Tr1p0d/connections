@@ -3,12 +3,12 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-------------------------------------------------------------------
+--------------------------------------------------------------------
 -- |
 -- Module      :  TCP Connection type class instance
 -- Copyright   :  (C) Marek Kidon 2016
 -- License     :  BSD-style (see the file LICENSE)
--- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz
+-- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz>
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
@@ -29,8 +29,7 @@ import qualified Network.Socket as Socket
     , Socket
     , close
     , )
-import qualified Network.Socket.ByteString as Socket
-    (send, recv)
+import qualified Network.Socket.ByteString as Socket (send, recv)
 import System.IO.Error (IOError)
 
 import Network.Connections.Class.Connection

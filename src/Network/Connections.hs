@@ -3,12 +3,12 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
 
-------------------------------------------------------------------
+--------------------------------------------------------------------
 -- |
 -- Module      :  The Connections library interface
 -- Copyright   :  (C) Marek Kidon 2016
 -- License     :  BSD-style (see the file LICENSE)
--- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz
+-- Maintainer  :  Marek 'Tr1p0d' Kidon <marek.kidon@itcommunity.cz>
 -- Stability   :  experimental
 -- Portability :  non-portable
 --
@@ -56,7 +56,7 @@ runClient ::
   -> m a
 runClient connection connectHandler closeHandler app = do
     accessConn <- connect
-    (app $ mkData accessConn) <* close accessConn
+    app (mkData accessConn) <* close accessConn
   where
     connect = E.catch (establishConnection connection) connectHandler
     close accessConn = E.catch
