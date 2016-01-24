@@ -1,0 +1,67 @@
+name:                   connections
+version:                0.1.0.0
+synopsis:               Safety enforcing abstract client/servier connection
+                        library.
+
+description:            Connections provides a safe way for creating client and
+                        server applications trough obligating their users to
+                        explicitly catch exceptions. The library does not
+                        bind you to a concrete monad, you create one. Just
+                        make sure the transport you use has the Connection
+                        instance.
+
+license:                BSD3
+license-file:           LICENSE
+author:                 Marek 'Tr1p0d' Kidon
+maintainer:             marek.kidon@itcommunity.cz
+-- copyright:
+category:               Network
+build-type:             Simple
+-- extra-source-files:
+cabal-version:          >=1.10
+
+library
+  -- exposed-modules:
+    other-modules:
+                        Network.Connections
+                        Network.Connections.Class.Connection
+                        Network.Connections.Instances.TCP
+                        Network.Connections.Types.TCP
+                        Network.Connections.Types.ConnectionData
+
+  -- other-extensions:
+    build-depends:      base >=4.8 && <4.9
+                        , bytestring == 0.10.6.*
+                        , transformers == 0.4.3.*
+                        , mtl == 2.2.1.*
+
+                        , exceptions == 0.8.2.*
+                        , tagged-exception-core == 2.1.*
+-- Will find its use in future versions
+--                        , connection-pool == 0.2.*
+                        , lens == 4.13.*
+                        , network == 2.6.*
+                        , streaming-commons == 0.1.15.*
+                        , text == 1.2.1.*
+    ghc-options:        -Wall -fwarn-missing-import-lists -fwarn-implicit-prelude
+    hs-source-dirs:     src
+    default-language:   Haskell2010
+
+executable simpleClient
+    main-is:            Main.hs
+    hs-source-dirs:     src
+    default-language:   Haskell2010
+    build-depends:      base >=4.8 && <4.9
+                        , bytestring == 0.10.6.*
+                        , transformers == 0.4.3.*
+                        , mtl == 2.2.1.*
+
+                        , exceptions == 0.8.2.*
+-- Will find its use in future versions
+                        , tagged-exception-core == 2.1.*
+--                        , connection-pool == 0.2.*
+                        , lens == 4.13.*
+                        , network == 2.6.*
+                        , streaming-commons == 0.1.15.*
+                        , text == 1.2.1.*
+    ghc-options:        -Wall -fwarn-missing-import-lists -fwarn-implicit-prelude
