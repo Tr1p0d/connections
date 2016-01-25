@@ -61,7 +61,7 @@ instance Connection TCP where
     closeConnection _ = E.liftT . liftIO . Socket.close
 
     type SendError TCP = IOError
-    sendData _ a = E.liftT . liftIO . void . Socket.send a
+    sendData _ = ((E.liftT . liftIO . void) .) . Socket.send
 
     type RecvError TCP = IOError
     recvData _ = E.liftT . liftIO . flip Socket.recv 4096
