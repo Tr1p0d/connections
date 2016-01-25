@@ -22,12 +22,13 @@ import Control.Exception (Exception)
 import qualified Control.Monad.TaggedException as E (catch)
 import Control.Monad.Catch (MonadCatch)
 import Control.Monad.IO.Class (MonadIO)
-import Data.Function (($))
+import Data.Proxy (Proxy)
 
 import Network.Connections.Class.Connection
   ( Connection
   , CloseConnectionError
   , ConnectionAccessor
+  , ConnectionSettings
   , EstablishConnectionError
   , RecvError
   , SendError
@@ -49,19 +50,20 @@ runClient ::
   , Exception (EstablishConnectionError c)
   , Exception (CloseConnectionError c)
   )
-  => c
+  => Proxy c
+  -> ConnectionSettings c
   -> OnConnectErrorHandler c m
   -> OnCloseErrorHandler c m
   -> (ConnectionData m (SendError c) (RecvError c) -> m a)
   -> m a
-runClient connection connectHandler closeHandler app = do
+runClient p settings connectHandler closeHandler app = do
     accessConn <- connect
     app (mkData accessConn) <* close accessConn
   where
-    connect = E.catch (establishConnection connection) connectHandler
+    connect = E.catch (establishConnection p settings) connectHandler
     close accessConn = E.catch
-        (closeConnection connection accessConn)
+        (closeConnection p accessConn)
         closeHandler
     mkData accessConn = ConnectionData
-        (sendData connection accessConn)
-        (recvData connection accessConn)
+        (sendData p accessConn)
+        (recvData p accessConn)

@@ -18,10 +18,12 @@ module Network.Connections.Types.TCP where
 import Data.ByteString (ByteString)
 import Data.Int (Int)
 
-data TCP = TCP
-    { _host :: ByteString
-    , _port :: Int
-    }
+data TCP
 
-mkTCPClient :: ByteString -> Int -> TCP
-mkTCPClient = TCP
+data TCPSettings = TCPSettings
+  { _host :: ByteString
+  , _port :: Int
+  }
+
+mkTCPSettings :: ByteString -> Int -> TCPSettings
+mkTCPSettings = TCPSettings

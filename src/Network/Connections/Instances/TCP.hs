@@ -34,6 +34,7 @@ import System.IO.Error (IOError)
 
 import Network.Connections.Class.Connection
   ( Connection
+  , ConnectionSettings
   , CloseConnectionError
   , ConnectionAccessor
   , EstablishConnectionError
@@ -44,13 +45,14 @@ import Network.Connections.Class.Connection
   , recvData
   , sendData
   )
-import Network.Connections.Types.TCP (TCP(TCP))
+import Network.Connections.Types.TCP (TCP, TCPSettings(TCPSettings))
 
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
+    type ConnectionSettings TCP = TCPSettings
 
     type EstablishConnectionError TCP = IOError
-    establishConnection (TCP h p)  =
+    establishConnection _p (TCPSettings h p)  =
         E.liftT $ liftIO $ fst <$> getSocketFamilyTCP h p Socket.AF_INET
 
     type CloseConnectionError TCP = IOError

@@ -20,27 +20,30 @@ import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.TaggedException (Throws)
 import Data.ByteString (ByteString)
+import Data.Proxy (Proxy)
 
 class Connection c where
     type ConnectionAccessor c :: *
+    type ConnectionSettings c :: *
 
     type EstablishConnectionError c :: *
     establishConnection
         :: (MonadIO m, MonadThrow m, Exception (EstablishConnectionError c))
-        => c
+        => Proxy c
+        -> ConnectionSettings c
         -> Throws (EstablishConnectionError c) m (ConnectionAccessor c)
 
     type CloseConnectionError c :: *
     closeConnection
         :: (MonadIO m, MonadThrow m, Exception (CloseConnectionError c))
-        => c
+        => Proxy c
         -> ConnectionAccessor c
         -> Throws (CloseConnectionError c) m ()
 
     type SendError c :: *
     sendData
         :: (MonadIO m, MonadThrow m)
-        => c
+        => Proxy c
         -> ConnectionAccessor c
         -> ByteString
         -> Throws (SendError c) m ()
@@ -48,6 +51,6 @@ class Connection c where
     type RecvError c :: *
     recvData
         :: (MonadIO m, MonadThrow m)
-        => c
+        => Proxy c
         -> ConnectionAccessor c
         -> Throws (RecvError c) m ByteString

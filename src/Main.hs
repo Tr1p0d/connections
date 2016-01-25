@@ -24,15 +24,16 @@ import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT, throwError)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Either (either)
-import Data.Function((.), ($), const, id)
+import Data.Function((.), ($), const)
 import Data.Functor (Functor)
 import Data.List ((++))
+import Data.Proxy (Proxy(Proxy))
 import System.IO (IO, print)
 import Text.Show (Show, show)
 
 import Network.Connections (runClient)
 import Network.Connections.Instances.TCP ()
-import Network.Connections.Types.TCP (mkTCPClient)
+import Network.Connections.Types.TCP (TCP, mkTCPSettings)
 
 data TCPConnectionError
   = ConnectionRefused
@@ -68,9 +69,14 @@ main = eval client >>= either print return
     eval = runExceptT . runTCP
 
 client :: (MonadIO m, MonadCatch m) => TCPConnectionT m ()
-client = runClient connection onConnectHandler onCloseHandler sampleApp
+client = runClient
+    (Proxy :: Proxy TCP)
+    settings
+    onConnectHandler
+    onCloseHandler
+    sampleApp
   where
-    connection = mkTCPClient "127.0.0.1" 4444
+    settings = mkTCPSettings "127.0.0.1" 4444
     onConnectHandler = const $ throwError ConnectionRefused
     onCloseHandler = const $ throwError CloseError
     sampleApp _ = return ()
