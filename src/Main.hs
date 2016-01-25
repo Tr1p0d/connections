@@ -19,10 +19,13 @@
 module Main where
 
 import Control.Applicative (Applicative)
-import Control.Monad ((>>=), Monad, return)
+import Control.Concurrent (threadDelay)
+import Control.Lens ((^.), (&))
+import Control.Monad ((>>=), Monad, return, void)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT, throwError)
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Control.Monad.TaggedException as E (catch)
 import Data.Either (either)
 import Data.Function((.), ($), const)
 import Data.Functor (Functor)
@@ -34,6 +37,7 @@ import Text.Show (Show, show)
 import Network.Connections (runClient)
 import Network.Connections.Instances.TCP ()
 import Network.Connections.Types.TCP (TCP, mkTCPSettings)
+import Network.Connections.Types.ConnectionData (recv, send)
 
 data TCPConnectionError
   = ConnectionRefused
@@ -45,9 +49,12 @@ instance Show TCPConnectionError where
     show = \case
         ConnectionRefused
             -> withPrefix "The connection to the remote party was refused."
-        DataSendError -> withPrefix "Could not send data to socket."
-        DataReceiveError -> withPrefix "Could not receive data from socket."
-        CloseError -> withPrefix "Could not close the socket."
+        DataSendError
+            -> withPrefix "Could not send data to the socket."
+        DataReceiveError
+            -> withPrefix "Could not receive data from the socket."
+        CloseError
+            -> withPrefix "Could not close the socket."
       where
         withPrefix = ("TCPConnectionError: " ++)
 
@@ -79,4 +86,11 @@ client = runClient
     settings = mkTCPSettings "127.0.0.1" 4444
     onConnectHandler = const $ throwError ConnectionRefused
     onCloseHandler = const $ throwError CloseError
-    sampleApp _ = return ()
+    sampleApp cd = do
+        liftIO (threadDelay tenSeconds)
+        safeSend "Ahoj Svete"
+        void safeRecv
+      where
+        safeSend d = E.catch (d & cd ^. send) (\_e -> throwError DataSendError)
+        safeRecv = E.catch (cd ^. recv) (\_e -> throwError DataReceiveError)
+        tenSeconds = 10000000

@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 --------------------------------------------------------------------
 -- |
@@ -13,12 +14,27 @@
 -- read and write functions parametrized over their exceptions and
 -- underlying monad.
 --------------------------------------------------------------------
-module Network.Connections.Types.ConnectionData where
+module Network.Connections.Types.ConnectionData
+  ( ConnectionData
+  , mkConnectionData
+  , send
+  , recv
+  )
+where
 
+import Control.Lens (makeLenses)
 import Control.Monad.TaggedException (Throws)
 import Data.ByteString (ByteString)
 
+type Send es m = ByteString -> Throws es m ()
+type Recv er m = Throws er m ByteString
+
 data ConnectionData m es er = ConnectionData
-  { send ::  ByteString -> Throws es m ()
-  , recv ::  Throws er m ByteString
+  { _send ::  Send es m
+  , _recv ::  Recv er m
   }
+
+mkConnectionData :: Send es m -> Recv er m -> ConnectionData m es er
+mkConnectionData = ConnectionData
+
+makeLenses ''ConnectionData

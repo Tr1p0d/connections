@@ -37,7 +37,10 @@ import Network.Connections.Class.Connection
   , recvData
   , sendData
   )
-import Network.Connections.Types.ConnectionData (ConnectionData(ConnectionData))
+import Network.Connections.Types.ConnectionData
+  ( ConnectionData
+  , mkConnectionData
+  )
 
 type OnConnectErrorHandler c m =
     EstablishConnectionError c -> m (ConnectionAccessor c)
@@ -64,6 +67,6 @@ runClient p settings connectHandler closeHandler app = do
     close accessConn = E.catch
         (closeConnection p accessConn)
         closeHandler
-    mkData accessConn = ConnectionData
+    mkData accessConn = mkConnectionData
         (sendData p accessConn)
         (recvData p accessConn)

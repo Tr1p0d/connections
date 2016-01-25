@@ -18,10 +18,11 @@
 module Network.Connections.Instances.TCP where
 
 import Control.Applicative ((<$>))
+import Control.Lens ((^.))
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.TaggedException as E (liftT)
-import Data.Function ( (.), ($), flip)
+import Data.Function ((.), ($), flip)
 import Data.Tuple (fst)
 import Data.Streaming.Network (getSocketFamilyTCP)
 import qualified Network.Socket as Socket
@@ -45,15 +46,16 @@ import Network.Connections.Class.Connection
   , recvData
   , sendData
   )
-import Network.Connections.Types.TCP (TCP, TCPSettings(TCPSettings))
+import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
 
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
 
     type EstablishConnectionError TCP = IOError
-    establishConnection _p (TCPSettings h p)  =
-        E.liftT $ liftIO $ fst <$> getSocketFamilyTCP h p Socket.AF_INET
+    establishConnection _p s =
+        E.liftT $ liftIO $ fst
+        <$> getSocketFamilyTCP (s ^. host) (s ^. port) Socket.AF_INET
 
     type CloseConnectionError TCP = IOError
     closeConnection _ = E.liftT . liftIO . Socket.close

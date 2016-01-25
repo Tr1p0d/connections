@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 --------------------------------------------------------------------
 -- |
@@ -13,8 +14,16 @@
 -- Its intention is to define the TCP transport connection
 -- with its settings.
 --------------------------------------------------------------------
-module Network.Connections.Types.TCP where
+module Network.Connections.Types.TCP
+  ( TCP
+  , TCPSettings
+  , host
+  , mkTCPSettings
+  , port
+  )
+where
 
+import Control.Lens (makeLenses)
 import Data.ByteString (ByteString)
 import Data.Int (Int)
 
@@ -27,3 +36,5 @@ data TCPSettings = TCPSettings
 
 mkTCPSettings :: ByteString -> Int -> TCPSettings
 mkTCPSettings = TCPSettings
+
+makeLenses ''TCPSettings
