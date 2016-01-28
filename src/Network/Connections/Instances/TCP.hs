@@ -47,15 +47,17 @@ import Network.Connections.Class.Connection
   , sendData
   )
 import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
+import Network.Connections.Internal.Types.Exception (ConnectionRefusedException)
+import Network.Connections.Internal.Networking.TCP (getTCPSocketAddress)
 
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
 
-    type EstablishConnectionError TCP = IOError
+    type EstablishConnectionError TCP = ConnectionRefusedException
     establishConnection _p s =
         E.liftT $ liftIO $ fst
-        <$> getSocketFamilyTCP (s ^. host) (s ^. port) Socket.AF_INET
+        <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET
 
     type CloseConnectionError TCP = IOError
     closeConnection _ = E.liftT . liftIO . Socket.close

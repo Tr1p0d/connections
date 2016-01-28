@@ -26,6 +26,8 @@ library
                         Network.Connections
                         Network.Connections.Class.Connection
                         Network.Connections.Instances.TCP
+                        Network.Connections.Internal.Types.Exception
+                        Network.Connections.Internal.Networking.TCP
                         Network.Connections.Types.TCP
                         Network.Connections.Types.ConnectionData
 

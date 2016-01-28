@@ -84,7 +84,7 @@ client = runClient
     sampleApp
   where
     settings = mkTCPSettings "127.0.0.1" 4444
-    onConnectHandler = const $ throwError ConnectionRefused
+    onConnectHandler e = throwError ConnectionRefused
     onCloseHandler = const $ throwError CloseError
     sampleApp cd = do
         liftIO (threadDelay tenSeconds)
