@@ -24,7 +24,6 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.TaggedException as E (liftT)
 import Data.Function ((.), ($), flip)
 import Data.Tuple (fst)
-import Data.Streaming.Network (getSocketFamilyTCP)
 import qualified Network.Socket as Socket
     ( Family(AF_INET)
     , Socket
@@ -54,7 +53,7 @@ instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
 
-    type EstablishConnectionError TCP = ConnectionRefusedException
+    type EstablishConnectionError TCP = IOError-- ConnectionRefusedException
     establishConnection _p s =
         E.liftT $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET
