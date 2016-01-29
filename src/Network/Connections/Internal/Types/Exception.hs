@@ -32,13 +32,30 @@ newtype NoRouteToHost e = NoRouteToHost e
 
 instance Exception (NoRouteToHost IOError)
 
+newtype Unknown e = Unknown e
+  deriving (Show, Typeable)
+
+instance Exception (Unknown IOError)
+
 type ConnectionRefusedException = ConnectionRefused IOError
 type NoRouteToHostException = NoRouteToHost IOError
+type UnknownException = Unknown IOError
 
 data e1 :^: e2
     = E1 e1
     | E2 e2
   deriving (Show, Typeable)
 
-instance Exception (ConnectionRefusedException :^: NoRouteToHostException)
-instance Exception (NoRouteToHostException:^: ConnectionRefusedException)
+instance Exception
+    ( ConnectionRefusedException
+    :^: NoRouteToHostException
+    )
+instance Exception
+    ( NoRouteToHostException
+    :^: ConnectionRefusedException
+    )
+instance Exception
+    ( ConnectionRefusedException
+    :^: NoRouteToHostException
+    :^: UnknownException
+    )

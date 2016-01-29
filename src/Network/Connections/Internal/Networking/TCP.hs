@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE TypeOperators #-}
@@ -18,19 +19,21 @@
 module Network.Connections.Internal.Networking.TCP where
 
 --import Control.Applicative ((<$>))
-import Control.Exception ({-mapException, -}throw, catch)
+import Control.Exception ({-mapException, -}throw, handle)
 import Data.ByteString (ByteString)
 import Data.Int (Int)
-import Data.Function ((.), ($), flip)
+import Data.Function ((.))
+import Data.Function (($))
+import Data.Maybe (maybe)
 import Data.Streaming.Network (getSocketFamilyTCP)
-import GHC.IO.Exception (IOErrorType(NoSuchThing))
+--import GHC.IO.Exception (IOErrorType(NoSuchThing))
 import qualified Network.Socket as Socket
     ( Family
     , SockAddr
     , Socket
     )
 import System.IO (IO)
-import System.IO.Error (IOError, ioeGetErrorType, ioeGetErrorString)
+import System.IO.Error (IOError{-, ioeGetErrorType-})
 
 import Network.Connections.Internal.Types.Exception
     ( ConnectionRefused(ConnectionRefused)
@@ -40,28 +43,24 @@ import Network.Connections.Internal.Types.Exception
     , type (:^:)(E1, E2)
     )
 
+import Prelude (undefined)
+--import Debug.Trace (traceShow)
+import GHC.IO.Exception (ioe_errno)
+
 getTCPSocketAddress
     :: ByteString
     -> Int
     -> Socket.Family
     -> IO (Socket.Socket, Socket.SockAddr)
 --getTCPSocketAddress = (((mapException mapper <$>) .) .) getSocketFamilyTCP
-getTCPSocketAddress = ((((throw . mapper) `rcatch`) .) .) . getSocketFamilyTCP
+getTCPSocketAddress = ((((throw . mapper) `handle`) .) .) . getSocketFamilyTCP
   where
-    rcatch = flip catch
-    --mapper :: IOError -> NoRouteToHostException :^: ConnectionRefusedException
-    mapper :: IOError -> ConnectionRefusedException
-    mapper e = case ioeGetErrorType e of
-        NoSuchThing -> case ioeGetErrorString e of
-            --"No route to host" -> NoRouteToHost e
-            "Connection refused" -> ConnectionRefused e
+    mapper :: IOError -> NoRouteToHostException :^: ConnectionRefusedException
+    mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
+      where
+        handleNoErrno = undefined
+        handleByErrno = \case
+            111 -> E2 $ ConnectionRefused e
+            113 -> E1 $ NoRouteToHost e
             _ -> undefined
-        _ -> undefined
-    undefined = undefined
-    --mapper e = case ioeGetErrorType e of
-    --    NoSuchThing -> case ioeGetErrorString e of
-    --        "No route to host" -> E1 $ NoRouteToHost e
-    --        "Connection refused" -> E2 $ ConnectionRefused e
-    --        _ -> undefined
-    --    _ -> undefined
-    --undefined = undefined
+    -- traceShow no $ ConnectionRefused e

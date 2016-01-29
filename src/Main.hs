@@ -83,7 +83,7 @@ client = runClient
     onCloseHandler
     sampleApp
   where
-    settings = mkTCPSettings "10.80.62.68" 4444
+    settings = mkTCPSettings "127.0.0.1" 4444
     onConnectHandler e = throwError ConnectionRefused
     onCloseHandler = const $ throwError CloseError
     sampleApp cd = do

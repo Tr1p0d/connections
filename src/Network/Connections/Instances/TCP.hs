@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -46,14 +47,18 @@ import Network.Connections.Class.Connection
   , sendData
   )
 import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
-import Network.Connections.Internal.Types.Exception (ConnectionRefusedException)
+import Network.Connections.Internal.Types.Exception
+  ( ConnectionRefusedException
+  , NoRouteToHostException
+  , type (:^:)
+  )
 import Network.Connections.Internal.Networking.TCP (getTCPSocketAddress)
 
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
 
-    type EstablishConnectionError TCP = IOError-- ConnectionRefusedException
+    type EstablishConnectionError TCP = NoRouteToHostException :^: ConnectionRefusedException
     establishConnection _p s =
         E.liftT $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET
