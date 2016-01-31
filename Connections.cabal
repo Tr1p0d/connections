@@ -38,6 +38,7 @@ library
                         , mtl == 2.2.1.*
 
                         , exceptions == 0.8.2.*
+                        , errno-exceptions == 0.1.*
                         , tagged-exception-core == 2.1.*
 -- Will find its use in future versions
 --                        , connection-pool == 0.2.*
@@ -59,6 +60,7 @@ executable simpleClient
                         , mtl == 2.2.1.*
 
                         , exceptions == 0.8.2.*
+                        , errno-exceptions == 0.1.*
 -- Will find its use in future versions
                         , tagged-exception-core == 2.1.*
 --                        , connection-pool == 0.2.*

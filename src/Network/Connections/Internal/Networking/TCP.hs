@@ -20,6 +20,12 @@ module Network.Connections.Internal.Networking.TCP where
 
 --import Control.Applicative ((<$>))
 import Control.Exception ({-mapException, -}throw, handle)
+import Control.Exception.Errno
+    ( ConnectionRefused(ConnectionRefused)
+    , ConnectionRefusedError
+    , HostUnreachable(HostUnreachable)
+    , HostUnreachableError
+    )
 import Data.ByteString (ByteString)
 import Data.Int (Int)
 import Data.Function ((.))
@@ -35,13 +41,7 @@ import qualified Network.Socket as Socket
 import System.IO (IO)
 import System.IO.Error (IOError{-, ioeGetErrorType-})
 
-import Network.Connections.Internal.Types.Exception
-    ( ConnectionRefused(ConnectionRefused)
-    , ConnectionRefusedException
-    , NoRouteToHost(NoRouteToHost)
-    , NoRouteToHostException
-    , type (:^:)(E1, E2)
-    )
+import Network.Connections.Internal.Types.Exception (type (:^:)(E1, E2))
 
 import Prelude (undefined)
 --import Debug.Trace (traceShow)
@@ -55,12 +55,12 @@ getTCPSocketAddress
 --getTCPSocketAddress = (((mapException mapper <$>) .) .) getSocketFamilyTCP
 getTCPSocketAddress = ((((throw . mapper) `handle`) .) .) . getSocketFamilyTCP
   where
-    mapper :: IOError -> NoRouteToHostException :^: ConnectionRefusedException
+    mapper :: IOError -> HostUnreachableError :^: ConnectionRefusedError
     mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
       where
         handleNoErrno = undefined
         handleByErrno = \case
             111 -> E2 $ ConnectionRefused e
-            113 -> E1 $ NoRouteToHost e
+            113 -> E1 $ HostUnreachable e
             _ -> undefined
     -- traceShow no $ ConnectionRefused e

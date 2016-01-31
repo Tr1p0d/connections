@@ -1,7 +1,12 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 --------------------------------------------------------------------
 -- |
@@ -18,44 +23,70 @@
 module Network.Connections.Internal.Types.Exception where
 
 import Control.Exception (Exception)
+import Control.Exception.Errno
+    ( ConnectionRefusedError
+    , HostUnreachableError
+    )
+import Control.Monad (Monad, return)
+import qualified Control.Monad.TaggedException as E (Throws)
 import Data.Typeable (Typeable)
-import System.IO.Error (IOError)
 import Text.Show (Show)
 
-newtype ConnectionRefused e = ConnectionRefused e
-  deriving (Show, Typeable)
+import Prelude (undefined)
 
-instance Exception (ConnectionRefused IOError)
+catch :: Catches e (E.Throws es m a)
+catch = undefined
 
-newtype NoRouteToHost e = NoRouteToHost e
-  deriving (Show, Typeable)
+computation :: E.Throws '[Exception1, Exception2] m ()
+computation = undefined -- (return ())
 
-instance Exception (NoRouteToHost IOError)
+handler :: Monad m => (Exception1 -> m ())
+handler _ = return ()
 
-newtype Unknown e = Unknown e
-  deriving (Show, Typeable)
+type family Catches e t :: * where
+    e `Catches` (E.Throws es m a)
+        = (E.Throws es m a)
+        -> (e -> m a)
+        -> CatchesResult (E.Throws (e :-- es) m a)
 
-instance Exception (Unknown IOError)
+type family CatchesResult t :: * where
+    CatchesResult (E.Throws '[] m a) = m a
+    CatchesResult a = a
 
-type ConnectionRefusedException = ConnectionRefused IOError
-type NoRouteToHostException = NoRouteToHost IOError
-type UnknownException = Unknown IOError
+type family e1 :-- e2 where
+    e1 :-- (e1 ': es) = es
+    e1 :-- (e2 ': '[]) = '[]
+    e1 :-- (e2 ': es) = e2 ': (e1 :-- es)
+
+catchNotLast
+    :: Catches HostUnreachableError
+    (E.Throws
+        [ HostUnreachableError
+        , ConnectionRefusedError
+        ]
+    m a)
+catchNotLast = undefined
+
+catchLast
+    :: Catches HostUnreachableError
+    (E.Throws
+        '[ HostUnreachableError
+        ]
+    m a)
+catchLast = undefined
+
+data Exception1 = Exception1
+data Exception2 = Exception2
 
 data e1 :^: e2
     = E1 e1
     | E2 e2
-  deriving (Show, Typeable)
+    deriving (Show, Typeable)
 
 instance Exception
-    ( ConnectionRefusedException
-    :^: NoRouteToHostException
+    ( HostUnreachableError :^: ConnectionRefusedError
     )
+
 instance Exception
-    ( NoRouteToHostException
-    :^: ConnectionRefusedException
-    )
-instance Exception
-    ( ConnectionRefusedException
-    :^: NoRouteToHostException
-    :^: UnknownException
+    ( ConnectionRefusedError :^: HostUnreachableError
     )

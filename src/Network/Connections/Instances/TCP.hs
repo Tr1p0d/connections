@@ -19,6 +19,10 @@
 module Network.Connections.Instances.TCP where
 
 import Control.Applicative ((<$>))
+import Control.Exception.Errno
+    ( ConnectionRefusedError
+    , HostUnreachableError
+    )
 import Control.Lens ((^.))
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
@@ -47,18 +51,15 @@ import Network.Connections.Class.Connection
   , sendData
   )
 import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
-import Network.Connections.Internal.Types.Exception
-  ( ConnectionRefusedException
-  , NoRouteToHostException
-  , type (:^:)
-  )
+import Network.Connections.Internal.Types.Exception (type (:^:))
 import Network.Connections.Internal.Networking.TCP (getTCPSocketAddress)
 
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
 
-    type EstablishConnectionError TCP = NoRouteToHostException :^: ConnectionRefusedException
+    type EstablishConnectionError TCP =
+        HostUnreachableError :^: ConnectionRefusedError
     establishConnection _p s =
         E.liftT $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET

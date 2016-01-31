@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 --------------------------------------------------------------------
@@ -20,6 +21,7 @@ module Main where
 
 import Control.Applicative (Applicative)
 import Control.Concurrent (threadDelay)
+--import Control.Exception.Errno (ConnectionRefusedError)
 import Control.Lens ((^.), (&))
 import Control.Monad ((>>=), Monad, return, void)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
@@ -31,6 +33,7 @@ import Data.Function((.), ($), const)
 import Data.Functor (Functor)
 import Data.List ((++))
 import Data.Proxy (Proxy(Proxy))
+--import Network.Socket (Socket)
 import System.IO (IO, print)
 import Text.Show (Show, show)
 
@@ -84,7 +87,9 @@ client = runClient
     sampleApp
   where
     settings = mkTCPSettings "127.0.0.1" 4444
-    onConnectHandler e = throwError ConnectionRefused
+
+    --onConnectHandler :: (Monad m) => ConnectionRefusedError -> TCPConnectionT m Socket
+    onConnectHandler = const $ throwError ConnectionRefused
     onCloseHandler = const $ throwError CloseError
     sampleApp cd = do
         liftIO (threadDelay tenSeconds)
