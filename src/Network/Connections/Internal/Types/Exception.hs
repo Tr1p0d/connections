@@ -34,46 +34,26 @@ import Text.Show (Show)
 
 import Prelude (undefined)
 
-catch :: Catches e (E.Throws es m a)
+catch
+    :: (e -> m a)
+    -> (E.Throws es m a)
+    -> CatchesResult (E.Throws (e `Catch` es) m a)
 catch = undefined
 
-computation :: E.Throws '[Exception1, Exception2] m ()
+computation :: E.Throws '[Exception1] m ()
 computation = undefined -- (return ())
 
-handler :: Monad m => (Exception1 -> m ())
-handler _ = return ()
-
-type family Catches e t :: * where
-    e `Catches` (E.Throws es m a)
-        = (E.Throws es m a)
-        -> (e -> m a)
-        -> CatchesResult (E.Throws (e :-- es) m a)
+handler :: Exception1 -> m ()
+handler = undefined
 
 type family CatchesResult t :: * where
     CatchesResult (E.Throws '[] m a) = m a
     CatchesResult a = a
 
-type family e1 :-- e2 where
-    e1 :-- (e1 ': es) = es
-    e1 :-- (e2 ': '[]) = '[]
-    e1 :-- (e2 ': es) = e2 ': (e1 :-- es)
-
-catchNotLast
-    :: Catches HostUnreachableError
-    (E.Throws
-        [ HostUnreachableError
-        , ConnectionRefusedError
-        ]
-    m a)
-catchNotLast = undefined
-
-catchLast
-    :: Catches HostUnreachableError
-    (E.Throws
-        '[ HostUnreachableError
-        ]
-    m a)
-catchLast = undefined
+type family e1 `Catch` e2 where
+    e1 `Catch` (e1 ': es) = es
+    --e1 `Catch` (e2 ': '[]) = '[]
+    e1 `Catch` (e2 ': es) = e2 ': (e1 `Catch` es)
 
 data Exception1 = Exception1
 data Exception2 = Exception2
