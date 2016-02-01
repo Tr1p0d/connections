@@ -52,7 +52,7 @@ type family CatchesResult t :: * where
 
 type family e1 `Catch` e2 where
     e1 `Catch` (e1 ': es) = es
-    --e1 `Catch` (e2 ': '[]) = '[]
+    e1 `Catch` (e2 ': '[]) = '[]
     e1 `Catch` (e2 ': es) = e2 ': (e1 `Catch` es)
 
 data Exception1 = Exception1
