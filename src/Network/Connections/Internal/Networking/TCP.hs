@@ -41,7 +41,7 @@ import qualified Network.Socket as Socket
 import System.IO (IO)
 import System.IO.Error (IOError{-, ioeGetErrorType-})
 
-import Network.Connections.Internal.Types.Exception (type (:^:)(E1, E2))
+import Network.Connections.Internal.Types.Exception ()
 
 import Prelude (undefined)
 --import Debug.Trace (traceShow)
@@ -53,14 +53,13 @@ getTCPSocketAddress
     -> Socket.Family
     -> IO (Socket.Socket, Socket.SockAddr)
 --getTCPSocketAddress = (((mapException mapper <$>) .) .) getSocketFamilyTCP
-getTCPSocketAddress = ((((throw . mapper) `handle`) .) .) . getSocketFamilyTCP
+getTCPSocketAddress = (((mapper `handle`) .) .) . getSocketFamilyTCP
   where
-    mapper :: IOError -> HostUnreachableError :^: ConnectionRefusedError
     mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
       where
         handleNoErrno = undefined
         handleByErrno = \case
-            111 -> E2 $ ConnectionRefused e
-            113 -> E1 $ HostUnreachable e
+            111 -> throw $ ConnectionRefused e
+            113 -> throw $ HostUnreachable e
             _ -> undefined
     -- traceShow no $ ConnectionRefused e

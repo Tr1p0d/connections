@@ -20,6 +20,8 @@ module Network.Connections where
 import Control.Applicative ((<*))
 import Control.Exception (Exception)
 import qualified Control.Monad.TaggedException as E (catch)
+import qualified Control.Monad.TaggedException.Internal.Throws as E
+    (hideException)
 import Control.Monad.Catch (MonadCatch)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Proxy (Proxy)
@@ -37,36 +39,38 @@ import Network.Connections.Class.Connection
   , recvData
   , sendData
   )
+import Network.Connections.Internal.Types.Exception (catch')
 import Network.Connections.Types.ConnectionData
   ( ConnectionData
   , mkConnectionData
   )
 
-type OnConnectErrorHandler c m =
-    EstablishConnectionError c -> m (ConnectionAccessor c)
-type OnCloseErrorHandler c m = CloseConnectionError c -> m ()
+--type OnConnectErrorHandler c m =
+--    EstablishConnectionError c -> m (ConnectionAccessor c)
+--type OnCloseErrorHandler c m = CloseConnectionError c -> m ()
 
 runClient ::
   ( Connection c
-  , Exception (EstablishConnectionError c)
-  , Exception (CloseConnectionError c)
   , MonadCatch m
   , MonadIO m
   )
   => Proxy c
   -> ConnectionSettings c
-  -> OnConnectErrorHandler c m
-  -> OnCloseErrorHandler c m
+ -- -> OnConnectErrorHandler c m
+ -- -> OnCloseErrorHandler c m
   -> (ConnectionData m (SendError c) (RecvError c) -> m a)
   -> m a
-runClient p settings connectHandler closeHandler app = do
+runClient p settings {-connectHandler closeHandler-} app = do
     accessConn <- connect
     app (mkData accessConn) <* close accessConn
   where
-    connect = E.catch (establishConnection p settings) connectHandler
-    close accessConn = E.catch
+    connect = E.hideException (establishConnection p settings) --connectHandler
+    close accessConn = E.hideException
         (closeConnection p accessConn)
-        closeHandler
+        --closeHandler
     mkData accessConn = mkConnectionData
         (sendData p accessConn)
         (recvData p accessConn)
+    connectHandler = undefined
+    closeHandler = undefined
+    undefined = undefined

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -27,6 +28,8 @@ import Control.Lens ((^.))
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.TaggedException as E (liftT)
+import qualified Control.Monad.TaggedException.Internal.Throws as E
+    (Throws(Throws))
 import Data.Function ((.), ($), flip)
 import Data.Tuple (fst)
 import qualified Network.Socket as Socket
@@ -51,7 +54,7 @@ import Network.Connections.Class.Connection
   , sendData
   )
 import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
-import Network.Connections.Internal.Types.Exception (type (:^:))
+import Network.Connections.Internal.Types.Exception ()
 import Network.Connections.Internal.Networking.TCP (getTCPSocketAddress)
 
 instance Connection TCP where
@@ -59,9 +62,9 @@ instance Connection TCP where
     type ConnectionSettings TCP = TCPSettings
 
     type EstablishConnectionError TCP =
-        HostUnreachableError :^: ConnectionRefusedError
+        [HostUnreachableError, ConnectionRefusedError]
     establishConnection _p s =
-        E.liftT $ liftIO $ fst
+        E.Throws $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET
 
     type CloseConnectionError TCP = IOError

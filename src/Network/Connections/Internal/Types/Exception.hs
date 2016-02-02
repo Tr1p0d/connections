@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeOperators #-}
@@ -23,51 +24,64 @@
 module Network.Connections.Internal.Types.Exception where
 
 import Control.Exception (Exception)
+{-
 import Control.Exception.Errno
     ( ConnectionRefusedError
     , HostUnreachableError
     )
+-}
 import Control.Monad.Catch (MonadCatch, catch)
 import qualified Control.Monad.TaggedException as E (Throws)
 import qualified Control.Monad.TaggedException.Internal.Throws as E
     (Throws(Throws))
-import Data.Function ((.))
-import Data.Typeable (Typeable)
-import Text.Show (Show)
+import Data.Function ((.), id)
 
-import Prelude (undefined)
+--import Prelude (undefined)
 
 catch'
-    :: (Exception e, MonadCatch m)
+    ::
+    ( Exception e
+    , MonadCatch m
+    , FromThrows (E.Throws (e `Catch` es) m a)
+    )
     => E.Throws es m a
     -> (e -> m a)
-    -> E.Throws (e `Catch` es) m a
-catch' (E.Throws ma) = E.Throws . catch ma
+    -> EvalThrows (E.Throws (e `Catch` es) m a)
+catch' = (evalThrows .) . catch''
+  where
+    catch''
+        :: (Exception e, MonadCatch m)
+        => E.Throws es m a
+        -> (e -> m a)
+        -> E.Throws (e `Catch` es ) m a
+    catch'' (E.Throws ma) = E.Throws . catch ma
 
-computation :: E.Throws '[HostUnreachableError] m ()
-computation = undefined -- (return ())
+class FromThrows a where
+    type EvalThrows a :: *
+
+    evalThrows :: a -> EvalThrows a
+
+instance FromThrows (E.Throws '[] m a) where
+    type EvalThrows (E.Throws '[] m a) = m a
+
+    evalThrows (E.Throws ma) = ma
+
+instance FromThrows (E.Throws '[e]  m a) where
+    type EvalThrows (E.Throws '[e]  m a) = E.Throws '[e] m a
+
+    evalThrows = id
+
+type family (e1 :: *) `Catch` (e2 :: [*]) where
+    e1 `Catch` '[] = '[]
+    e1 `Catch` (e1 ': es) = e1 `Catch` es
+    e1 `Catch` (e2 ': es) = e2 ': (e1 `Catch` es)
+{-
+computation :: E.Throws [HostUnreachableError, ConnectionRefusedError] m ()
+computation = undefined
 
 handler :: HostUnreachableError -> m ()
 handler = undefined
 
-type family CatchesResult t :: * where
-    CatchesResult (E.Throws '[] m a) = m a
-    CatchesResult a = a
-
-type family e1 `Catch` e2 where
-    e1 `Catch` e1 ': es = es
-    e1 `Catch` e2 ': '[] = '[]
-    e1 `Catch` e2 ': es = e2 ': (e1 `Catch` es)
-
-data e1 :^: e2
-    = E1 e1
-    | E2 e2
-    deriving (Show, Typeable)
-
-instance Exception
-    ( HostUnreachableError :^: ConnectionRefusedError
-    )
-
-instance Exception
-    ( ConnectionRefusedError :^: HostUnreachableError
-    )
+handler' :: ConnectionRefusedError -> m ()
+handler' = undefined
+-}

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -26,21 +27,21 @@ class Connection c where
     type ConnectionAccessor c :: *
     type ConnectionSettings c :: *
 
-    type EstablishConnectionError c :: *
+    type EstablishConnectionError c :: [*]
     establishConnection
-        :: (MonadIO m, MonadThrow m, Exception (EstablishConnectionError c))
+        :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionSettings c
         -> Throws (EstablishConnectionError c) m (ConnectionAccessor c)
 
-    type CloseConnectionError c :: *
+    type CloseConnectionError c
     closeConnection
-        :: (MonadIO m, MonadThrow m, Exception (CloseConnectionError c))
+        :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionAccessor c
         -> Throws (CloseConnectionError c) m ()
 
-    type SendError c :: *
+    type SendError c
     sendData
         :: (MonadIO m, MonadThrow m)
         => Proxy c
@@ -48,7 +49,7 @@ class Connection c where
         -> ByteString
         -> Throws (SendError c) m ()
 
-    type RecvError c :: *
+    type RecvError c
     recvData
         :: (MonadIO m, MonadThrow m)
         => Proxy c

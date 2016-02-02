@@ -82,15 +82,15 @@ client :: (MonadIO m, MonadCatch m) => TCPConnectionT m ()
 client = runClient
     (Proxy :: Proxy TCP)
     settings
-    onConnectHandler
-    onCloseHandler
+    --onConnectHandler
+    --onCloseHandler
     sampleApp
   where
     settings = mkTCPSettings "127.0.0.1" 4444
 
     --onConnectHandler :: (Monad m) => ConnectionRefusedError -> TCPConnectionT m Socket
-    onConnectHandler = const $ throwError ConnectionRefused
-    onCloseHandler = const $ throwError CloseError
+    --onConnectHandler = const $ throwError ConnectionRefused
+    --onCloseHandler = const $ throwError CloseError
     sampleApp cd = do
         liftIO (threadDelay tenSeconds)
         safeSend "Ahoj Svete"
