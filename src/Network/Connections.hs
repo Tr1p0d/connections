@@ -17,12 +17,11 @@
 --------------------------------------------------------------------
 module Network.Connections where
 
-import Control.Applicative ((<*), Applicative)
+import Control.Applicative ((<*))
 import Control.Exception (Exception)
 import qualified Control.Monad.TaggedException as E (catch)
 import Control.Monad.Catch (MonadCatch)
 import Control.Monad.IO.Class (MonadIO)
-import Data.Functor (Functor)
 import Data.Proxy (Proxy)
 
 import Network.Connections.Class.Connection
@@ -48,9 +47,7 @@ type OnConnectErrorHandler c m =
 type OnCloseErrorHandler c m = CloseConnectionError c -> m ()
 
 runClient ::
-  ( Applicative m
-  , Connection c
-  , Functor m
+  ( Connection c
   , Exception (EstablishConnectionError c)
   , Exception (CloseConnectionError c)
   , MonadCatch m

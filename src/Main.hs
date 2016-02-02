@@ -78,7 +78,7 @@ main = eval client >>= either print return
   where
     eval = runExceptT . runTCP
 
-client :: (Functor m, MonadIO m, MonadCatch m) => TCPConnectionT m ()
+client :: (MonadIO m, MonadCatch m) => TCPConnectionT m ()
 client = runClient
     (Proxy :: Proxy TCP)
     settings

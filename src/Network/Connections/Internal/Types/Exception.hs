@@ -27,23 +27,27 @@ import Control.Exception.Errno
     ( ConnectionRefusedError
     , HostUnreachableError
     )
-import Control.Monad (Monad, return)
+import Control.Monad.Catch (MonadCatch, catch)
 import qualified Control.Monad.TaggedException as E (Throws)
+import qualified Control.Monad.TaggedException.Internal.Throws as E
+    (Throws(Throws))
+import Data.Function ((.))
 import Data.Typeable (Typeable)
 import Text.Show (Show)
 
 import Prelude (undefined)
 
-catch
-    :: (e -> m a)
-    -> (E.Throws es m a)
-    -> CatchesResult (E.Throws (e `Catch` es) m a)
-catch = undefined
+catch'
+    :: (Exception e, MonadCatch m)
+    => E.Throws es m a
+    -> (e -> m a)
+    -> E.Throws (e `Catch` es) m a
+catch' (E.Throws ma) = E.Throws . catch ma
 
-computation :: E.Throws '[Exception1] m ()
+computation :: E.Throws '[HostUnreachableError] m ()
 computation = undefined -- (return ())
 
-handler :: Exception1 -> m ()
+handler :: HostUnreachableError -> m ()
 handler = undefined
 
 type family CatchesResult t :: * where
@@ -51,12 +55,9 @@ type family CatchesResult t :: * where
     CatchesResult a = a
 
 type family e1 `Catch` e2 where
-    e1 `Catch` (e1 ': es) = es
-    e1 `Catch` (e2 ': '[]) = '[]
-    e1 `Catch` (e2 ': es) = e2 ': (e1 `Catch` es)
-
-data Exception1 = Exception1
-data Exception2 = Exception2
+    e1 `Catch` e1 ': es = es
+    e1 `Catch` e2 ': '[] = '[]
+    e1 `Catch` e2 ': es = e2 ': (e1 `Catch` es)
 
 data e1 :^: e2
     = E1 e1
