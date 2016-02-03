@@ -22,9 +22,7 @@ module Network.Connections.Internal.Networking.TCP where
 import Control.Exception ({-mapException, -}throw, handle)
 import Control.Exception.Errno
     ( ConnectionRefused(ConnectionRefused)
-    , ConnectionRefusedError
     , HostUnreachable(HostUnreachable)
-    , HostUnreachableError
     )
 import Data.ByteString (ByteString)
 import Data.Int (Int)
@@ -39,12 +37,8 @@ import qualified Network.Socket as Socket
     , Socket
     )
 import System.IO (IO)
-import System.IO.Error (IOError{-, ioeGetErrorType-})
-
-import Network.Connections.Internal.Types.Exception ()
 
 import Prelude (undefined)
---import Debug.Trace (traceShow)
 import GHC.IO.Exception (ioe_errno)
 
 getTCPSocketAddress
@@ -52,7 +46,6 @@ getTCPSocketAddress
     -> Int
     -> Socket.Family
     -> IO (Socket.Socket, Socket.SockAddr)
---getTCPSocketAddress = (((mapException mapper <$>) .) .) getSocketFamilyTCP
 getTCPSocketAddress = (((mapper `handle`) .) .) . getSocketFamilyTCP
   where
     mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)

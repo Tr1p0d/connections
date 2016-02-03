@@ -29,7 +29,7 @@ import Control.Monad.Except (ExceptT, MonadError, runExceptT, throwError)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Control.Monad.TaggedException as E (catch)
 import Data.Either (either)
-import Data.Function((.), ($), const)
+import Data.Function((.){-, ($), const-})
 import Data.Functor (Functor)
 import Data.List ((++))
 import Data.Proxy (Proxy(Proxy))
@@ -82,10 +82,11 @@ client :: (MonadIO m, MonadCatch m) => TCPConnectionT m ()
 client = runClient
     (Proxy :: Proxy TCP)
     settings
-    --onConnectHandler
-    --onCloseHandler
+    undefined
+    undefined
     sampleApp
   where
+    undefined = undefined
     settings = mkTCPSettings "127.0.0.1" 4444
 
     --onConnectHandler :: (Monad m) => ConnectionRefusedError -> TCPConnectionT m Socket

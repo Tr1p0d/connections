@@ -18,36 +18,27 @@
 module Network.Connections where
 
 import Control.Applicative ((<*))
-import Control.Exception (Exception)
-import qualified Control.Monad.TaggedException as E (catch)
-import qualified Control.Monad.TaggedException.Internal.Throws as E
-    (hideException)
 import Control.Monad.Catch (MonadCatch)
 import Control.Monad.IO.Class (MonadIO)
+import Data.Function (($))
 import Data.Proxy (Proxy)
 
 import Network.Connections.Class.Connection
-  ( Connection
-  , CloseConnectionError
-  , ConnectionAccessor
-  , ConnectionSettings
-  , EstablishConnectionError
-  , RecvError
-  , SendError
-  , closeConnection
-  , establishConnection
-  , recvData
-  , sendData
-  )
-import Network.Connections.Internal.Types.Exception (catch')
+    ( Connection
+    , ConnectionSettings
+    , OnCloseErrorHandler
+    , OnConnectErrorHandler
+    , RecvError
+    , SendError
+    , closeConnection
+    , establishConnection
+    , recvData
+    , sendData
+    )
 import Network.Connections.Types.ConnectionData
-  ( ConnectionData
-  , mkConnectionData
-  )
-
---type OnConnectErrorHandler c m =
---    EstablishConnectionError c -> m (ConnectionAccessor c)
---type OnCloseErrorHandler c m = CloseConnectionError c -> m ()
+    ( ConnectionData
+    , mkConnectionData
+    )
 
 runClient ::
   ( Connection c
@@ -56,21 +47,16 @@ runClient ::
   )
   => Proxy c
   -> ConnectionSettings c
- -- -> OnConnectErrorHandler c m
- -- -> OnCloseErrorHandler c m
+  -> OnConnectErrorHandler c m
+  -> OnCloseErrorHandler c m
   -> (ConnectionData m (SendError c) (RecvError c) -> m a)
   -> m a
-runClient p settings {-connectHandler closeHandler-} app = do
+runClient p settings connectHandler closeHandler app = do
     accessConn <- connect
     app (mkData accessConn) <* close accessConn
   where
-    connect = E.hideException (establishConnection p settings) --connectHandler
-    close accessConn = E.hideException
-        (closeConnection p accessConn)
-        --closeHandler
+    connect = connectHandler $ establishConnection p settings
+    close accessConn = closeHandler $ closeConnection p accessConn
     mkData accessConn = mkConnectionData
         (sendData p accessConn)
         (recvData p accessConn)
-    connectHandler = undefined
-    closeHandler = undefined
-    undefined = undefined

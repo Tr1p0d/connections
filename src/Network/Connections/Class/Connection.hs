@@ -16,12 +16,18 @@
 --------------------------------------------------------------------
 module Network.Connections.Class.Connection where
 
-import Control.Exception (Exception)
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.TaggedException (Throws)
+import qualified Control.Monad.TaggedException as E (Throws)
 import Data.ByteString (ByteString)
 import Data.Proxy (Proxy)
+
+type OnConnectErrorHandler c m
+    =  E.Throws (EstablishConnectionError c) m (ConnectionAccessor c)
+    -> m (ConnectionAccessor c)
+type OnCloseErrorHandler c m
+    = E.Throws (CloseConnectionError c) m ()
+    -> m ()
 
 class Connection c where
     type ConnectionAccessor c :: *
@@ -32,14 +38,14 @@ class Connection c where
         :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionSettings c
-        -> Throws (EstablishConnectionError c) m (ConnectionAccessor c)
+        -> E.Throws (EstablishConnectionError c) m (ConnectionAccessor c)
 
     type CloseConnectionError c
     closeConnection
         :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionAccessor c
-        -> Throws (CloseConnectionError c) m ()
+        -> E.Throws (CloseConnectionError c) m ()
 
     type SendError c
     sendData
@@ -47,11 +53,11 @@ class Connection c where
         => Proxy c
         -> ConnectionAccessor c
         -> ByteString
-        -> Throws (SendError c) m ()
+        -> E.Throws (SendError c) m ()
 
     type RecvError c
     recvData
         :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionAccessor c
-        -> Throws (RecvError c) m ByteString
+        -> E.Throws (RecvError c) m ByteString
