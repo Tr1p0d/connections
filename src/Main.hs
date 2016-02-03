@@ -1,8 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 --------------------------------------------------------------------
@@ -21,32 +23,40 @@ module Main where
 
 import Control.Applicative (Applicative)
 import Control.Concurrent (threadDelay)
---import Control.Exception.Errno (ConnectionRefusedError)
+import Control.Exception.Errno (ConnectionRefusedError, HostUnreachableError)
 import Control.Lens ((^.), (&))
 import Control.Monad ((>>=), Monad, return, void)
 import Control.Monad.Catch (MonadCatch, MonadThrow)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT, throwError)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import qualified Control.Monad.TaggedException as E (catch)
+import qualified Control.Monad.TaggedException as E (Throws)
 import Data.Either (either)
-import Data.Function((.){-, ($), const-})
+import Data.Function((.), ($){-, const-})
 import Data.Functor (Functor)
 import Data.List ((++))
 import Data.Proxy (Proxy(Proxy))
---import Network.Socket (Socket)
+import Network.Socket (Socket)
 import System.IO (IO, print)
 import Text.Show (Show, show)
 
 import Network.Connections (runClient)
 import Network.Connections.Instances.TCP ()
+import Network.Connections.Internal.Types.Exception
+    ( EvalThrows
+    , FromThrows
+    , catch'
+    )
 import Network.Connections.Types.TCP (TCP, mkTCPSettings)
 import Network.Connections.Types.ConnectionData (recv, send)
 
+import Prelude (undefined)
+
 data TCPConnectionError
-  = ConnectionRefused
-  | DataSendError
-  | DataReceiveError
-  | CloseError
+    = CloseError
+    | ConnectionRefused
+    | HostUnreachable
+    | DataSendError
+    | DataReceiveError
 
 instance Show TCPConnectionError where
     show = \case
@@ -78,25 +88,59 @@ main = eval client >>= either print return
   where
     eval = runExceptT . runTCP
 
-client :: (MonadIO m, MonadCatch m) => TCPConnectionT m ()
+client :: TCPConnectionT IO ()
 client = runClient
     (Proxy :: Proxy TCP)
     settings
-    undefined
-    undefined
+    onConnectHandler
+    onCloseHandler
     sampleApp
   where
-    undefined = undefined
     settings = mkTCPSettings "127.0.0.1" 4444
 
-    --onConnectHandler :: (Monad m) => ConnectionRefusedError -> TCPConnectionT m Socket
-    --onConnectHandler = const $ throwError ConnectionRefused
-    --onCloseHandler = const $ throwError CloseError
     sampleApp cd = do
         liftIO (threadDelay tenSeconds)
-        safeSend "Ahoj Svete"
+        void $ safeSend "Ahoj Svete"
         void safeRecv
       where
-        safeSend d = E.catch (d & cd ^. send) (\_e -> throwError DataSendError)
-        safeRecv = E.catch (cd ^. recv) (\_e -> throwError DataReceiveError)
+        safeSend = undefined
+        safeRecv = undefined
         tenSeconds = 10000000
+
+onConnectHandler
+    ::
+    ( MonadError TCPConnectionError (TCPConnectionT IO)
+    , FromThrows (E.Throws
+        '[]
+        (TCPConnectionT IO) Socket)
+    )
+    => E.Throws [ConnectionRefusedError, HostUnreachableError]
+        (TCPConnectionT IO) Socket
+    -> EvalThrows (E.Throws '[] (TCPConnectionT IO) Socket)
+onConnectHandler computation = computation
+    `catch'` onConnectionRefused
+    `catch'` onHostUnreachable
+
+--    onConnectionRefused
+--        ::
+--        ( Monad m
+--        , MonadError TCPConnectionError (TCPConnectionT m)
+--        , FromThrows (E.Throws
+--            '[HostUnreachableError] (TCPConnectionT m) Socket)
+--        )
+--        => ConnectionRefusedError
+--        -> EvalThrows (E.Throws
+--            '[HostUnreachableError] (TCPConnectionT m) Socket)
+onConnectionRefused e = throwError ConnectionRefused
+--       onHostUnreachable
+--        ::
+--        ( Monad m
+--        , MonadError TCPConnectionError (TCPConnectionT m)
+--        , FromThrows (E.Throws
+--            '[] (TCPConnectionT m) Socket)
+--        )
+--        => HostUnreachableError
+--        -> EvalThrows (E.Throws '[] (TCPConnectionT m) Socket)
+onHostUnreachable e = throwError HostUnreachable
+
+onCloseHandler = undefined

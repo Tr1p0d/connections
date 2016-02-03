@@ -62,7 +62,7 @@ instance Connection TCP where
     type ConnectionSettings TCP = TCPSettings
 
     type EstablishConnectionError TCP =
-        [HostUnreachableError, ConnectionRefusedError]
+        [ConnectionRefusedError, HostUnreachableError]
     establishConnection _p s =
         E.Throws $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET

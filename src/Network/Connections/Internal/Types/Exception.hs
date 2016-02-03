@@ -30,6 +30,7 @@ import Control.Exception.Errno
     , HostUnreachableError
     )
 -}
+import Control.Monad (Monad)
 import Control.Monad.Catch (MonadCatch, catch)
 import qualified Control.Monad.TaggedException as E (Throws)
 import qualified Control.Monad.TaggedException.Internal.Throws as E
@@ -61,13 +62,16 @@ class FromThrows a where
 
     evalThrows :: a -> EvalThrows a
 
-instance FromThrows (E.Throws '[] m a) where
+instance Monad m => FromThrows (E.Throws '[] m a) where
     type EvalThrows (E.Throws '[] m a) = m a
 
     evalThrows (E.Throws ma) = ma
 
-instance FromThrows (E.Throws '[e]  m a) where
-    type EvalThrows (E.Throws '[e]  m a) = E.Throws '[e] m a
+instance Monad m => FromThrows (E.Throws '[e] m a) where
+    type EvalThrows (E.Throws '[e] m a) = E.Throws '[e] m a
+
+instance Monad m => FromThrows (E.Throws '[e, e1] m a) where
+    type EvalThrows (E.Throws '[e, e1] m a) = E.Throws '[e, e1] m a
 
     evalThrows = id
 
