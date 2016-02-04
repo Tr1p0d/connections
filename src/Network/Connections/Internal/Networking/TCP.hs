@@ -40,6 +40,7 @@ import qualified Network.Socket as Socket
     , Socket
     , close
     )
+import qualified Network.Socket.ByteString as Socket (send, recv)
 import System.IO (IO)
 
 import Prelude (undefined)
@@ -72,4 +73,30 @@ closeSocket = (mapper `handle`) . Socket.close
             4 -> throw $ CallInterupted e
             5 -> throw $ InputOutput e
             9 -> throw $ BadFileDescriptor e
+            _ -> undefined
+
+send
+    :: Socket.Socket
+    -> ByteString
+    -> IO Int
+send = ((mapper `handle`) .) . Socket.send
+  where
+    mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
+      where
+        handleNoErrno = undefined
+        handleByErrno = \case
+            32 -> throw $ BrokenPipe e
+            _ -> undefined
+
+recv
+    :: Socket.Socket
+    -> Int
+    -> IO ByteString
+recv = ((mapper `handle`) .) . Socket.recv
+  where
+    mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
+      where
+        handleNoErrno = undefined
+        handleByErrno = \case
+            32 -> throw $ BrokenPipe e
             _ -> undefined
