@@ -21,7 +21,11 @@ module Network.Connections.Internal.Networking.TCP where
 --import Control.Applicative ((<$>))
 import Control.Exception ({-mapException, -}throw, handle)
 import Control.Exception.Errno
-    ( ConnectionRefused(ConnectionRefused)
+    ( BadFileDescriptor(BadFileDescriptor)
+    , BrokenPipe(BrokenPipe)
+    , CallInterupted(CallInterupted)
+    , ConnectionRefused(ConnectionRefused)
+    , InputOutput(InputOutput)
     , HostUnreachable(HostUnreachable)
     )
 import Data.ByteString (ByteString)
@@ -34,6 +38,7 @@ import qualified Network.Socket as Socket
     ( Family
     , SockAddr
     , Socket
+    , close
     )
 import System.IO (IO)
 
@@ -54,4 +59,17 @@ getTCPSocketAddress = (((mapper `handle`) .) .) . getSocketFamilyTCP
             111 -> throw $ ConnectionRefused e
             113 -> throw $ HostUnreachable e
             _ -> undefined
-    -- traceShow no $ ConnectionRefused e
+
+closeSocket
+    :: Socket.Socket
+    -> IO ()
+closeSocket = (mapper `handle`) . Socket.close
+  where
+    mapper e = maybe (handleNoErrno e) handleByErrno (ioe_errno e)
+      where
+        handleNoErrno = undefined
+        handleByErrno = \case
+            4 -> throw $ CallInterupted e
+            5 -> throw $ InputOutput e
+            9 -> throw $ BadFileDescriptor e
+            _ -> undefined

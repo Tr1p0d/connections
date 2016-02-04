@@ -38,7 +38,6 @@ import Data.Tuple (fst)
 import qualified Network.Socket as Socket
     ( Family(AF_INET)
     , Socket
-    , close
     , )
 import qualified Network.Socket.ByteString as Socket (send, recv)
 
@@ -57,8 +56,10 @@ import Network.Connections.Class.Connection
   )
 import Network.Connections.Types.TCP (TCP, TCPSettings, host, port)
 import Network.Connections.Internal.Types.Exception ()
-import Network.Connections.Internal.Networking.TCP (getTCPSocketAddress)
-
+import Network.Connections.Internal.Networking.TCP
+    ( getTCPSocketAddress
+    , closeSocket
+    )
 instance Connection TCP where
     type ConnectionAccessor TCP = Socket.Socket
     type ConnectionSettings TCP = TCPSettings
@@ -74,7 +75,7 @@ instance Connection TCP where
         , InputOutputError
         , BadFileDescriptorError
         ]
-    closeConnection _ = E.Throws . liftIO . Socket.close
+    closeConnection _ = E.Throws . liftIO . closeSocket
 
     type SendError TCP = '[BrokenPipeError]
     sendData _ = ((E.Throws . liftIO . void) .) . Socket.send
