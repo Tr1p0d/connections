@@ -33,7 +33,7 @@ import Control.Monad.Catch (MonadCatch, catch)
 import qualified Control.Monad.TaggedException as E (Throws)
 import qualified Control.Monad.TaggedException.Internal.Throws as E
     (Throws(Throws))
-import Data.Function ((.), id)
+import Data.Function ((.), flip, id)
 
 import Prelude (undefined)
 
@@ -52,8 +52,19 @@ catch' = (evalThrows .) . catch''
         :: (Exception e, MonadCatch m)
         => E.Throws es m a
         -> (e -> m a)
-        -> E.Throws (e `Catch` es ) m a
+        -> E.Throws (e `Catch` es) m a
     catch'' (E.Throws ma) = E.Throws . catch ma
+
+handle'
+    ::
+    ( Exception e
+    , MonadCatch m
+    , FromThrows (E.Throws (e `Catch` es) m a)
+    )
+    => (e -> m a)
+    -> E.Throws es m a
+    -> EvalThrows (E.Throws (e `Catch` es) m a)
+handle' = flip catch'
 
 class FromThrows a where
     type EvalThrows a :: *
@@ -83,7 +94,7 @@ type family (e1 :: *) `Catch` (e2 :: [*]) where
 computation :: E.Throws [HostUnreachableError, ConnectionRefusedError] m ()
 computation = undefined
 
-handler :: HostUnreachableError -> E.Throws '[ConnectionRefusedError] m ()
+handler :: HostUnreachableError -> m ()
 handler = undefined
 
 handler' :: ConnectionRefusedError -> m ()

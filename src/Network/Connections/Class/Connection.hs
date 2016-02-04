@@ -40,14 +40,14 @@ class Connection c where
         -> ConnectionSettings c
         -> E.Throws (EstablishConnectionError c) m (ConnectionAccessor c)
 
-    type CloseConnectionError c
+    type CloseConnectionError c :: [*]
     closeConnection
         :: (MonadIO m, MonadThrow m)
         => Proxy c
         -> ConnectionAccessor c
         -> E.Throws (CloseConnectionError c) m ()
 
-    type SendError c
+    type SendError c :: [*]
     sendData
         :: (MonadIO m, MonadThrow m)
         => Proxy c
@@ -55,7 +55,7 @@ class Connection c where
         -> ByteString
         -> E.Throws (SendError c) m ()
 
-    type RecvError c
+    type RecvError c :: [*]
     recvData
         :: (MonadIO m, MonadThrow m)
         => Proxy c

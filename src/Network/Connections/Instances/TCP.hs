@@ -21,13 +21,16 @@ module Network.Connections.Instances.TCP where
 
 import Control.Applicative ((<$>))
 import Control.Exception.Errno
-    ( ConnectionRefusedError
+    ( BadFileDescriptorError
+    , BrokenPipeError
+    , CallInteruptedError
+    , ConnectionRefusedError
     , HostUnreachableError
+    , InputOutputError
     )
 import Control.Lens ((^.))
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
-import qualified Control.Monad.TaggedException as E (liftT)
 import qualified Control.Monad.TaggedException.Internal.Throws as E
     (Throws(Throws))
 import Data.Function ((.), ($), flip)
@@ -38,7 +41,6 @@ import qualified Network.Socket as Socket
     , close
     , )
 import qualified Network.Socket.ByteString as Socket (send, recv)
-import System.IO.Error (IOError)
 
 import Network.Connections.Class.Connection
   ( Connection
@@ -67,11 +69,15 @@ instance Connection TCP where
         E.Throws $ liftIO $ fst
         <$> getTCPSocketAddress (s ^. host) (s ^. port) Socket.AF_INET
 
-    type CloseConnectionError TCP = IOError
-    closeConnection _ = E.liftT . liftIO . Socket.close
+    type CloseConnectionError TCP =
+        [ CallInteruptedError
+        , InputOutputError
+        , BadFileDescriptorError
+        ]
+    closeConnection _ = E.Throws . liftIO . Socket.close
 
-    type SendError TCP = IOError
-    sendData _ = ((E.liftT . liftIO . void) .) . Socket.send
+    type SendError TCP = '[BrokenPipeError]
+    sendData _ = ((E.Throws . liftIO . void) .) . Socket.send
 
-    type RecvError TCP = IOError
-    recvData _ = E.liftT . liftIO . flip Socket.recv 4096
+    type RecvError TCP = '[BrokenPipeError]
+    recvData _ = E.Throws . liftIO . flip Socket.recv 4096
