@@ -24,12 +24,10 @@
 module Network.Connections.Internal.Types.Exception where
 
 import Control.Exception (Exception)
-{-
 import Control.Exception.Errno
     ( ConnectionRefusedError
     , HostUnreachableError
     )
--}
 import Control.Monad (Monad)
 import Control.Monad.Catch (MonadCatch, catch)
 import qualified Control.Monad.TaggedException as E (Throws)
@@ -37,7 +35,7 @@ import qualified Control.Monad.TaggedException.Internal.Throws as E
     (Throws(Throws))
 import Data.Function ((.), id)
 
---import Prelude (undefined)
+import Prelude (undefined)
 
 catch'
     ::
@@ -70,22 +68,24 @@ instance Monad m => FromThrows (E.Throws '[] m a) where
 instance Monad m => FromThrows (E.Throws '[e] m a) where
     type EvalThrows (E.Throws '[e] m a) = E.Throws '[e] m a
 
+    evalThrows = id
+
 instance Monad m => FromThrows (E.Throws '[e, e1] m a) where
     type EvalThrows (E.Throws '[e, e1] m a) = E.Throws '[e, e1] m a
 
     evalThrows = id
 
 type family (e1 :: *) `Catch` (e2 :: [*]) where
+    e1 `Catch` (e1 ': es) = es
     e1 `Catch` '[] = '[]
-    e1 `Catch` (e1 ': es) = e1 `Catch` es
     e1 `Catch` (e2 ': es) = e2 ': (e1 `Catch` es)
-{-
+
 computation :: E.Throws [HostUnreachableError, ConnectionRefusedError] m ()
 computation = undefined
 
-handler :: HostUnreachableError -> m ()
+handler :: HostUnreachableError -> E.Throws '[ConnectionRefusedError] m ()
 handler = undefined
 
 handler' :: ConnectionRefusedError -> m ()
 handler' = undefined
--}
+

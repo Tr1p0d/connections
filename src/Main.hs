@@ -40,6 +40,10 @@ import System.IO (IO, print)
 import Text.Show (Show, show)
 
 import Network.Connections (runClient)
+import Network.Connections.Class.Connection
+    ( OnConnectErrorHandler
+    , OnCloseErrorHandler
+    )
 import Network.Connections.Instances.TCP ()
 import Network.Connections.Internal.Types.Exception
     ( EvalThrows
@@ -68,6 +72,8 @@ instance Show TCPConnectionError where
             -> withPrefix "Could not receive data from the socket."
         CloseError
             -> withPrefix "Could not close the socket."
+        HostUnreachable
+            -> withPrefix "Destination host could not be reached."
       where
         withPrefix = ("TCPConnectionError: " ++)
 
@@ -107,40 +113,20 @@ client = runClient
         safeRecv = undefined
         tenSeconds = 10000000
 
-onConnectHandler
-    ::
-    ( MonadError TCPConnectionError (TCPConnectionT IO)
-    , FromThrows (E.Throws
-        '[]
-        (TCPConnectionT IO) Socket)
-    )
-    => E.Throws [ConnectionRefusedError, HostUnreachableError]
-        (TCPConnectionT IO) Socket
-    -> EvalThrows (E.Throws '[] (TCPConnectionT IO) Socket)
+onConnectHandler :: OnConnectErrorHandler TCP (TCPConnectionT IO)
 onConnectHandler computation = computation
     `catch'` onConnectionRefused
     `catch'` onHostUnreachable
 
---    onConnectionRefused
---        ::
---        ( Monad m
---        , MonadError TCPConnectionError (TCPConnectionT m)
---        , FromThrows (E.Throws
---            '[HostUnreachableError] (TCPConnectionT m) Socket)
---        )
---        => ConnectionRefusedError
---        -> EvalThrows (E.Throws
---            '[HostUnreachableError] (TCPConnectionT m) Socket)
-onConnectionRefused e = throwError ConnectionRefused
---       onHostUnreachable
---        ::
---        ( Monad m
---        , MonadError TCPConnectionError (TCPConnectionT m)
---        , FromThrows (E.Throws
---            '[] (TCPConnectionT m) Socket)
---        )
---        => HostUnreachableError
---        -> EvalThrows (E.Throws '[] (TCPConnectionT m) Socket)
-onHostUnreachable e = throwError HostUnreachable
+onConnectionRefused
+    :: ConnectionRefusedError
+    -> E.Throws '[HostUnreachableError] (TCPConnectionT IO) Socket
+onConnectionRefused _ = throwError ConnectionRefused
 
+onHostUnreachable
+    :: HostUnreachableError
+    -> TCPConnectionT IO Socket
+onHostUnreachable _ = throwError HostUnreachable
+
+onCloseHandler :: OnCloseErrorHandler TCP (TCPConnectionT IO)
 onCloseHandler = undefined
