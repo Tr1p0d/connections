@@ -23,17 +23,19 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Function (($))
 import Data.Proxy (Proxy)
 
-import Network.Connections.Class.Connection
-    ( Connection
-    , ConnectionSettings
-    , OnCloseErrorHandler
-    , OnConnectErrorHandler
+import Network.Connections.Class.Transport
+    ( ClientSettings
     , RecvError
     , SendError
-    , closeConnection
-    , establishConnection
     , recvData
     , sendData
+    )
+import Network.Connections.Class.Connection
+    ( ClientConnection
+    , OnCloseErrorHandler
+    , OnConnectErrorHandler
+    , closeConnection
+    , establishConnection
     )
 import Network.Connections.Types.ConnectionData
     ( ConnectionData
@@ -41,12 +43,12 @@ import Network.Connections.Types.ConnectionData
     )
 
 runClient ::
-  ( Connection c
+  ( ClientConnection c
   , MonadCatch m
   , MonadIO m
   )
   => Proxy c
-  -> ConnectionSettings c
+  -> ClientSettings c
   -> OnConnectErrorHandler c m
   -> OnCloseErrorHandler c m
   -> (ConnectionData m (SendError c) (RecvError c) -> m a)

@@ -47,7 +47,7 @@ import System.IO (IO, print)
 import Text.Show (Show, show)
 
 import Network.Connections (runClient)
-import Network.Connections.Instances.TCP ()
+import Network.Connections.Instances.TCP.ClientConnection ()
 import Network.Connections.Internal.Types.Exception (catch', handle')
 import Network.Connections.Types.TCP (TCP, mkTCPSettings)
 import Network.Connections.Types.ConnectionData (recv, send)
@@ -100,7 +100,7 @@ client = runClient
     onCloseHandler
     sampleApp
   where
-    settings = mkTCPSettings "10.0.0.139" 4444
+    settings = mkTCPSettings "127.0.0.1" 4444
 
     onConnectHandler computation = computation
         `catch'` onConnectionRefused

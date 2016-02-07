@@ -25,7 +25,10 @@ library
     other-modules:
                         Network.Connections
                         Network.Connections.Class.Connection
-                        Network.Connections.Instances.TCP
+                        Network.Connections.Class.Transport
+                        Network.Connections.Instances.TCP.ClientConnection
+                        Network.Connections.Instances.TCP.ServerConnection
+                        Network.Connections.Instances.TCP.Transport
                         Network.Connections.Internal.Types.Exception
                         Network.Connections.Internal.Networking.TCP
                         Network.Connections.Types.TCP

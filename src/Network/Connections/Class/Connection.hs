@@ -19,45 +19,48 @@ module Network.Connections.Class.Connection where
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class (MonadIO)
 import qualified Control.Monad.TaggedException as E (Throws)
-import Data.ByteString (ByteString)
 import Data.Proxy (Proxy)
 
+import qualified Network.Connections.Class.Transport as T
+    ( ConnectionAccessor
+    , ClientSettings
+    , Transport
+    , ServerSettings
+    )
+
 type OnConnectErrorHandler c m
-    =  E.Throws (EstablishConnectionError c) m (ConnectionAccessor c)
-    -> m (ConnectionAccessor c)
+    =  E.Throws (EstablishConnectionError c) m (T.ConnectionAccessor c)
+    -> m (T.ConnectionAccessor c)
 type OnCloseErrorHandler c m
     = E.Throws (CloseConnectionError c) m ()
     -> m ()
 
-class Connection c where
-    type ConnectionAccessor c :: *
-    type ConnectionSettings c :: *
-
+class T.Transport c => ClientConnection c where
     type EstablishConnectionError c :: [*]
     establishConnection
         :: (MonadIO m, MonadThrow m)
         => Proxy c
-        -> ConnectionSettings c
-        -> E.Throws (EstablishConnectionError c) m (ConnectionAccessor c)
+        -> T.ClientSettings c
+        -> E.Throws (EstablishConnectionError c) m (T.ConnectionAccessor c)
 
     type CloseConnectionError c :: [*]
     closeConnection
         :: (MonadIO m, MonadThrow m)
         => Proxy c
-        -> ConnectionAccessor c
+        -> T.ConnectionAccessor c
         -> E.Throws (CloseConnectionError c) m ()
 
-    type SendError c :: [*]
-    sendData
+class T.Transport c => ServerConnection c where
+    type EstablishServerError c :: [*]
+    establishServer
         :: (MonadIO m, MonadThrow m)
         => Proxy c
-        -> ConnectionAccessor c
-        -> ByteString
-        -> E.Throws (SendError c) m ()
+        -> T.ServerSettings c
+        -> E.Throws (EstablishServerError c) m (T.ConnectionAccessor c)
 
-    type RecvError c :: [*]
-    recvData
+    type CloseServerError c :: [*]
+    closeServer
         :: (MonadIO m, MonadThrow m)
         => Proxy c
-        -> ConnectionAccessor c
-        -> E.Throws (RecvError c) m ByteString
+        -> T.ConnectionAccessor c
+        -> E.Throws (CloseServerError c) m ()
